@@ -33,8 +33,8 @@
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
             width: 100%;
             height: 100%;
-            max-width: 500px;
-            max-height: 600px;
+            max-width: 600px;
+            max-height: 700px;
             display: flex;
             flex-direction: column;
             gap: 10px;
@@ -46,15 +46,20 @@
             gap: 10px;
         }
 
+        .input-row {
+            display: flex;
+            gap: 10px;
+        }
+
         textarea {
-            width: 100%;
-            height: 90px;
+            flex: 1;
+            height: 80px;
             padding: 8px;
             border: 2px solid #cccccc;
             border-radius: 8px;
-            font-size: 14px;
+            font-size: 13px;
             text-transform: uppercase;
-            resize: vertical;
+            resize: none;
         }
 
         textarea:focus {
@@ -70,7 +75,7 @@
         button {
             flex: 1;
             padding: 10px;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: bold;
             color: white;
             border: none;
@@ -84,25 +89,36 @@
         .btn-order:hover { background-color: #0056b3; }
         .btn-shuffle { background-color: #28a745; }
         .btn-shuffle:hover { background-color: #1e7e34; }
-        .btn-mini { background-color: #fd7e14; width: 100%; margin-top: 4px; }
+        .btn-split { background-color: #6f42c1; }
+        .btn-split:hover { background-color: #593196; }
+        .btn-mini { background-color: #fd7e14; width: 100%; margin-top: 2px; }
         .btn-mini:hover { background-color: #e06b00; }
 
-        .display-box {
-            position: relative;
+        /* Khung hiển thị tổng */
+        .display-container {
             width: 100%;
             flex: 1;
+            display: flex;
+            gap: 8px;
+        }
+
+        /* Ô hiển thị tên */
+        .display-box {
+            position: relative;
+            flex: 1;
+            height: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
             background-color: #e9ecef;
             border: 2px dashed #6c757d;
             border-radius: 10px;
-            font-size: clamp(18px, 8vw, 48px);
+            font-size: clamp(16px, 6vw, 42px);
             font-weight: bold;
             color: #111111;
             text-align: center;
             word-break: break-word;
-            padding: 25px 10px 10px 10px;
+            padding: 25px 8px 8px 8px;
             cursor: pointer;
             user-select: none;
             transition: background-color 0.3s;
@@ -112,9 +128,9 @@
 
         .round-tag {
             position: absolute;
-            top: 8px;
-            left: 10px;
-            font-size: clamp(10px, 3vw, 14px);
+            top: 6px;
+            left: 8px;
+            font-size: clamp(9px, 2.5vw, 12px);
             font-weight: bold;
             background: rgba(0, 0, 0, 0.15);
             color: #222;
@@ -122,7 +138,7 @@
             border-radius: 4px;
         }
 
-        /* Khi màn hình nhỏ hoặc là Cửa sổ Siêu Nhỏ -> Ẩn phần controls, tràn viền màn hình */
+        /* Khi màn hình nhỏ hoặc là Cửa sổ Siêu Nhỏ -> Ẩn phần controls */
         @media (max-width: 450px), (max-height: 300px) {
             body { padding: 0; }
             .controls { display: none !important; }
@@ -133,6 +149,9 @@
                 max-width: 100%;
                 max-height: 100%;
                 border-radius: 0;
+            }
+            .display-container {
+                gap: 2px;
             }
             .display-box {
                 height: 100vh;
@@ -147,28 +166,42 @@
     <div class="container">
         <!-- Phần nhập liệu -->
         <div class="controls">
-            <textarea id="nameInput" placeholder="Nhập tên tại đây (mỗi dòng 1 tên)..." oninput="forceUppercase(this)"></textarea>
+            <div class="input-row">
+                <textarea id="nameInputA" placeholder="CỘT A (Mỗi dòng 1 tên)..." oninput="forceUppercase(this)"></textarea>
+                <textarea id="nameInputB" placeholder="CỘT B (Nút chia đôi ô)..." style="display: none;" oninput="forceUppercase(this)"></textarea>
+            </div>
             <div class="btn-group">
-                <button class="btn-order" onclick="setModeAndNext('order')">Hiện theo thứ tự</button>
-                <button class="btn-shuffle" onclick="setModeAndNext('shuffle')">Hiện xáo trộn</button>
+                <button class="btn-order" onclick="setModeAndNext('order')">Hiện Theo Thứ Tự</button>
+                <button class="btn-shuffle" onclick="setModeAndNext('shuffle')">Hiện Xáo Trộn</button>
+                <button class="btn-split" onclick="toggleSplit()">↔️ Chia Đôi / Gộp Ô</button>
             </div>
             <button class="btn-mini" onclick="openMiniWindow()">🔲 Mở Cửa Sổ Siêu Nhỏ</button>
         </div>
 
-        <!-- Ô hiển thị tên -->
-        <div class="display-box" id="displayBox" onclick="triggerNextName()">
-            <span class="round-tag" id="roundTag">Vòng: 0</span>
-            <span id="nameText">--- CLICK ĐỂ BẮT ĐẦU ---</span>
+        <!-- Khung hiển thị tên (1 hoặc 2 ô) -->
+        <div class="display-container" id="displayContainer">
+            <!-- Ô A -->
+            <div class="display-box" id="displayBoxA" onclick="triggerNextName('A')">
+                <span class="round-tag" id="roundTagA">Vòng A: 0</span>
+                <span id="nameTextA">--- CỘT A ---</span>
+            </div>
+            <!-- Ô B (Ẩn mặc định) -->
+            <div class="display-box" id="displayBoxB" style="display: none;" onclick="triggerNextName('B')">
+                <span class="round-tag" id="roundTagB">Vòng B: 0</span>
+                <span id="nameTextB">--- CỘT B ---</span>
+            </div>
         </div>
     </div>
 
     <script>
+        let isSplit = false; // Trạng thái chia đôi ô
         let currentMode = 'order';
-        let currentIndex = 0;
-        let orderRound = 1;
-        let shuffledPool = [];
-        let shuffleRound = 1;
-        let currentBgColor = "#e9ecef";
+
+        // Dữ liệu riêng biệt cho Cột A và Cột B
+        const state = {
+            A: { currentIndex: 0, orderRound: 1, shuffledPool: [], shuffleRound: 1, color: "#e9ecef" },
+            B: { currentIndex: 0, orderRound: 1, shuffledPool: [], shuffleRound: 1, color: "#e9ecef" }
+        };
 
         const bgColors = [
             "#FFD1DC", "#FFDFBA", "#FFFFBA", "#BAFFC9", "#BAE1FF",
@@ -176,153 +209,177 @@
             "#FFDAC1", "#FFB7B2", "#E0FEFE", "#C7CEEA", "#F3E5F5"
         ];
 
-        // Kênh truyền dữ liệu đồng bộ giữa cửa sổ chính và cửa sổ siêu nhỏ
         const channel = new BroadcastChannel('name_picker_channel');
 
-        function forceUppercase(element) { 
-            element.value = element.value.toUpperCase(); 
+        function forceUppercase(element) { element.value = element.value.toUpperCase(); }
+
+        function getNamesList(column) {
+            const inputId = column === 'A' ? 'nameInputA' : 'nameInputB';
+            return document.getElementById(inputId).value.split('\n').map(n => n.trim()).filter(n => n.length > 0);
         }
 
-        function getNamesList() {
-            return document.getElementById('nameInput').value.split('\n').map(n => n.trim()).filter(n => n.length > 0);
+        function changeDisplayColor(col) {
+            state[col].color = bgColors[Math.floor(Math.random() * bgColors.length)];
+            document.getElementById(`displayBox${col}`).style.backgroundColor = state[col].color;
         }
 
-        function changeDisplayColor() {
-            currentBgColor = bgColors[Math.floor(Math.random() * bgColors.length)];
-            const displayBox = document.getElementById('displayBox');
-            displayBox.style.backgroundColor = currentBgColor;
+        // Bật / Tắt chế độ chia đôi ô
+        function toggleSplit() {
+            isSplit = !isSplit;
+            const boxB = document.getElementById('displayBoxB');
+            const inputB = document.getElementById('nameInputB');
+
+            if (isSplit) {
+                boxB.style.display = 'flex';
+                inputB.style.display = 'block';
+            } else {
+                boxB.style.display = 'none';
+                inputB.style.display = 'none';
+            }
+            broadcastState();
         }
 
         function setModeAndNext(mode) {
             currentMode = mode;
-            showNext();
+            showNext('A');
+            if (isSplit) showNext('B');
         }
 
-        function triggerNextName() { 
-            showNext(); 
+        function triggerNextName(col) {
+            showNext(col);
         }
 
-        function showNext() {
-            if (currentMode === 'order') showNextOrdered();
-            else showNextShuffled();
-
-            // Gửi dữ liệu cập nhật sang cửa sổ siêu nhỏ nếu đang mở
+        function showNext(col) {
+            if (currentMode === 'order') showNextOrdered(col);
+            else showNextShuffled(col);
             broadcastState();
         }
 
-        function showNextOrdered() {
-            const names = getNamesList();
-            const nameText = document.getElementById('nameText');
-            const roundTag = document.getElementById('roundTag');
+        function showNextOrdered(col) {
+            const names = getNamesList(col);
+            const nameText = document.getElementById(`nameText${col}`);
+            const roundTag = document.getElementById(`roundTag${col}`);
+            const st = state[col];
 
             if (names.length === 0) {
-                nameText.innerText = "CHƯA NHẬP TÊN!";
-                roundTag.innerText = "Vòng: 0";
+                nameText.innerText = `CHƯA NHẬP ${col}!`;
+                roundTag.innerText = `Vòng ${col}: 0`;
                 return;
             }
 
-            if (currentIndex >= names.length) {
-                currentIndex = 0;
-                orderRound++;
+            if (st.currentIndex >= names.length) {
+                st.currentIndex = 0;
+                st.orderRound++;
             }
 
-            nameText.innerText = names[currentIndex];
-            roundTag.innerText = `Vòng: ${orderRound}`;
-            currentIndex++;
-            changeDisplayColor();
+            nameText.innerText = names[st.currentIndex];
+            roundTag.innerText = `Vòng ${col}: ${st.orderRound}`;
+            st.currentIndex++;
+            changeDisplayColor(col);
         }
 
-        function showNextShuffled() {
-            const names = getNamesList();
-            const nameText = document.getElementById('nameText');
-            const roundTag = document.getElementById('roundTag');
+        function showNextShuffled(col) {
+            const names = getNamesList(col);
+            const nameText = document.getElementById(`nameText${col}`);
+            const roundTag = document.getElementById(`roundTag${col}`);
+            const st = state[col];
 
             if (names.length === 0) {
-                nameText.innerText = "CHƯA NHẬP TÊN!";
-                roundTag.innerText = "Vòng: 0";
-                shuffledPool = [];
+                nameText.innerText = `CHƯA NHẬP ${col}!`;
+                roundTag.innerText = `Vòng ${col}: 0`;
+                st.shuffledPool = [];
                 return;
             }
 
-            if (shuffledPool.length === 0) {
-                if (nameText.innerText !== "--- CLICK ĐỂ BẮT ĐẦU ---" && nameText.innerText !== "CHƯA NHẬP TÊN!") {
-                    shuffleRound++;
+            if (st.shuffledPool.length === 0) {
+                if (!nameText.innerText.includes("--- CỘT") && !nameText.innerText.includes("CHƯA NHẬP")) {
+                    st.shuffleRound++;
                 }
-                shuffledPool = [...names];
-                for (let i = shuffledPool.length - 1; i > 0; i--) {
+                st.shuffledPool = [...names];
+                for (let i = st.shuffledPool.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
-                    [shuffledPool[i], shuffledPool[j]] = [shuffledPool[j], shuffledPool[i]];
+                    [st.shuffledPool[i], st.shuffledPool[j]] = [st.shuffledPool[j], st.shuffledPool[i]];
                 }
             }
 
-            nameText.innerText = shuffledPool.pop();
-            roundTag.innerText = `Vòng: ${shuffleRound}`;
-            changeDisplayColor();
+            nameText.innerText = st.shuffledPool.pop();
+            roundTag.innerText = `Vòng ${col}: ${st.shuffleRound}`;
+            changeDisplayColor(col);
         }
 
-        // Đồng bộ dữ liệu trạng thái sang cửa sổ con
+        // Đồng bộ dữ liệu với cửa sổ siêu nhỏ
         function broadcastState() {
             channel.postMessage({
-                name: document.getElementById('nameText').innerText,
-                round: document.getElementById('roundTag').innerText,
-                bgColor: currentBgColor,
-                inputVal: document.getElementById('nameInput').value,
-                mode: currentMode,
-                currentIndex: currentIndex,
-                orderRound: orderRound,
-                shuffledPool: shuffledPool,
-                shuffleRound: shuffleRound
+                isSplit: isSplit,
+                currentMode: currentMode,
+                nameA: document.getElementById('nameTextA').innerText,
+                roundA: document.getElementById('roundTagA').innerText,
+                nameB: document.getElementById('nameTextB').innerText,
+                roundB: document.getElementById('roundTagB').innerText,
+                inputA: document.getElementById('nameInputA').value,
+                inputB: document.getElementById('nameInputB').value,
+                state: state
             });
         }
 
-        // Nhận dữ liệu đồng bộ nếu là cửa sổ siêu nhỏ hoặc nhận lệnh bấm từ cửa sổ con
         channel.onmessage = (event) => {
             const data = event.data;
             if (data.action === 'NEXT') {
-                showNext();
+                showNext(data.column);
             } else {
-                document.getElementById('nameText').innerText = data.name;
-                document.getElementById('roundTag').innerText = data.round;
-                document.getElementById('displayBox').style.backgroundColor = data.bgColor;
-                document.getElementById('nameInput').value = data.inputVal;
-                currentMode = data.mode;
-                currentIndex = data.currentIndex;
-                orderRound = data.orderRound;
-                shuffledPool = data.shuffledPool;
-                shuffleRound = data.shuffleRound;
+                isSplit = data.isSplit;
+                currentMode = data.currentMode;
+                
+                document.getElementById('displayBoxB').style.display = isSplit ? 'flex' : 'none';
+                document.getElementById('nameInputB').style.display = isSplit ? 'block' : 'none';
+
+                document.getElementById('nameTextA').innerText = data.nameA;
+                document.getElementById('roundTagA').innerText = data.roundA;
+                document.getElementById('nameTextB').innerText = data.nameB;
+                document.getElementById('roundTagB').innerText = data.roundB;
+
+                document.getElementById('nameInputA').value = data.inputA;
+                document.getElementById('nameInputB').value = data.inputB;
+
+                document.getElementById('displayBoxA').style.backgroundColor = data.state.A.color;
+                document.getElementById('displayBoxB').style.backgroundColor = data.state.B.color;
+
+                Object.assign(state.A, data.state.A);
+                Object.assign(state.B, data.state.B);
             }
         };
 
-        // Reset dữ liệu khi nhập mới
-        document.getElementById('nameInput').addEventListener('input', function() {
-            currentIndex = 0; orderRound = 1; shuffledPool = []; shuffleRound = 1;
-            document.getElementById('roundTag').innerText = "Vòng: 0";
-            document.getElementById('nameText').innerText = "--- CLICK ĐỂ BẮT ĐẦU ---";
-            broadcastState();
+        // Reset riêng khi sửa nội dung nhập liệu
+        ['A', 'B'].forEach(col => {
+            document.getElementById(`nameInput${col}`).addEventListener('input', function() {
+                state[col].currentIndex = 0;
+                state[col].orderRound = 1;
+                state[col].shuffledPool = [];
+                state[col].shuffleRound = 1;
+                document.getElementById(`roundTag${col}`).innerText = `Vòng ${col}: 0`;
+                document.getElementById(`nameText${col}`).innerText = `--- CỘT ${col} ---`;
+                broadcastState();
+            });
         });
 
-        // Hàm mở Cửa Sổ Siêu Nhỏ (Tự động hẹp chiều rộng)
         function openMiniWindow() {
-            const miniWin = window.open(
+            window.open(
                 window.location.href, 
                 'MiniNamePicker', 
-                'width=200,height=150,resizable=yes,scrollbars=no,status=no,toolbar=no,menubar=no'
+                'width=320,height=160,resizable=yes,scrollbars=no,status=no,toolbar=no,menubar=no'
             );
-
-            // Gửi dữ liệu hiện tại ngay khi cửa sổ con vừa mở
-            setTimeout(() => {
-                broadcastState();
-            }, 500);
+            setTimeout(broadcastState, 500);
         }
 
-        // Nếu đây là cửa sổ siêu nhỏ được mở ra, khi click vào sẽ báo cửa sổ mẹ nhảy tên
+        // Xử lý sự kiện click khi chạy ở Cửa sổ Siêu Nhỏ
         if (window.name === 'MiniNamePicker') {
-            document.getElementById('displayBox').onclick = function() {
-                if (window.opener && !window.opener.closed) {
-                    channel.postMessage({ action: 'NEXT' });
-                } else {
-                    showNext();
-                }
+            document.getElementById('displayBoxA').onclick = function() {
+                if (window.opener && !window.opener.closed) channel.postMessage({ action: 'NEXT', column: 'A' });
+                else showNext('A');
+            };
+            document.getElementById('displayBoxB').onclick = function() {
+                if (window.opener && !window.opener.closed) channel.postMessage({ action: 'NEXT', column: 'B' });
+                else showNext('B');
             };
         }
     </script>
