@@ -15,7 +15,7 @@
         html, body {
             width: 100%;
             height: 100%;
-            overflow: hidden; /* Ẩn thanh thanh cuộn khi thu nhỏ */
+            overflow: hidden;
             background-color: #f4f6f8;
         }
 
@@ -40,7 +40,6 @@
             gap: 10px;
         }
 
-        /* Phần điều khiển nhập liệu */
         .controls {
             display: flex;
             flex-direction: column;
@@ -85,21 +84,20 @@
         .btn-order:hover { background-color: #0056b3; }
         .btn-shuffle { background-color: #28a745; }
         .btn-shuffle:hover { background-color: #1e7e34; }
-        .btn-pip { background-color: #6f42c1; width: 100%; }
-        .btn-pip:hover { background-color: #593196; }
+        .btn-mini { background-color: #fd7e14; width: 100%; margin-top: 4px; }
+        .btn-mini:hover { background-color: #e06b00; }
 
-        /* Ô hiển thị tên */
         .display-box {
             position: relative;
             width: 100%;
-            flex: 1; /* Tự co giãn lấp đầy khoảng trống còn lại */
+            flex: 1;
             display: flex;
             justify-content: center;
             align-items: center;
             background-color: #e9ecef;
             border: 2px dashed #6c757d;
             border-radius: 10px;
-            font-size: clamp(20px, 8vw, 48px); /* Cỡ chữ tự co giãn theo kích thước màn hình */
+            font-size: clamp(18px, 8vw, 48px);
             font-weight: bold;
             color: #111111;
             text-align: center;
@@ -112,12 +110,11 @@
 
         .display-box:active { transform: scale(0.99); }
 
-        /* Thẻ hiển thị số vòng */
         .round-tag {
             position: absolute;
             top: 8px;
             left: 10px;
-            font-size: clamp(10px, 3vw, 14px); /* Cỡ chữ số vòng tự thu nhỏ */
+            font-size: clamp(10px, 3vw, 14px);
             font-weight: bold;
             background: rgba(0, 0, 0, 0.15);
             color: #222;
@@ -125,13 +122,10 @@
             border-radius: 4px;
         }
 
-        /* Ẩn Canvas & Video dùng cho PiP */
-        #hiddenCanvas, #pipVideo { display: none; }
-
-        /* QUY TẮC THU NHỎ WEB: Tự ẩn controls khi thu nhỏ cửa sổ (Rộng < 500px HOẶC Cao < 350px) */
-        @media (max-width: 500px), (max-height: 350px) {
+        /* Khi màn hình nhỏ hoặc là Cửa sổ Siêu Nhỏ -> Ẩn phần controls, tràn viền màn hình */
+        @media (max-width: 450px), (max-height: 300px) {
             body { padding: 0; }
-            .controls { display: none; }
+            .controls { display: none !important; }
             .container {
                 padding: 0;
                 box-shadow: none;
@@ -158,7 +152,7 @@
                 <button class="btn-order" onclick="setModeAndNext('order')">Hiện theo thứ tự</button>
                 <button class="btn-shuffle" onclick="setModeAndNext('shuffle')">Hiện xáo trộn</button>
             </div>
-            <button class="btn-pip" onclick="togglePiP()">📌 Bật / Tắt Khung Nổi (Always On Top)</button>
+            <button class="btn-mini" onclick="openMiniWindow()">🔲 Mở Cửa Sổ Siêu Nhỏ</button>
         </div>
 
         <!-- Ô hiển thị tên -->
@@ -167,9 +161,6 @@
             <span id="nameText">--- CLICK ĐỂ BẮT ĐẦU ---</span>
         </div>
     </div>
-
-    <canvas id="hiddenCanvas" width="500" height="300"></canvas>
-    <video id="pipVideo" autoplay muted loop></video>
 
     <script>
         let currentMode = 'order';
@@ -185,7 +176,12 @@
             "#FFDAC1", "#FFB7B2", "#E0FEFE", "#C7CEEA", "#F3E5F5"
         ];
 
-        function forceUppercase(element) { element.value = element.value.toUpperCase(); }
+        // Kênh truyền dữ liệu đồng bộ giữa cửa sổ chính và cửa sổ siêu nhỏ
+        const channel = new BroadcastChannel('name_picker_channel');
+
+        function forceUppercase(element) { 
+            element.value = element.value.toUpperCase(); 
+        }
 
         function getNamesList() {
             return document.getElementById('nameInput').value.split('\n').map(n => n.trim()).filter(n => n.length > 0);
@@ -195,7 +191,6 @@
             currentBgColor = bgColors[Math.floor(Math.random() * bgColors.length)];
             const displayBox = document.getElementById('displayBox');
             displayBox.style.backgroundColor = currentBgColor;
-            updateCanvas();
         }
 
         function setModeAndNext(mode) {
@@ -203,11 +198,16 @@
             showNext();
         }
 
-        function triggerNextName() { showNext(); }
+        function triggerNextName() { 
+            showNext(); 
+        }
 
         function showNext() {
             if (currentMode === 'order') showNextOrdered();
             else showNextShuffled();
+
+            // Gửi dữ liệu cập nhật sang cửa sổ siêu nhỏ nếu đang mở
+            broadcastState();
         }
 
         function showNextOrdered() {
@@ -218,7 +218,6 @@
             if (names.length === 0) {
                 nameText.innerText = "CHƯA NHẬP TÊN!";
                 roundTag.innerText = "Vòng: 0";
-                updateCanvas();
                 return;
             }
 
@@ -242,7 +241,6 @@
                 nameText.innerText = "CHƯA NHẬP TÊN!";
                 roundTag.innerText = "Vòng: 0";
                 shuffledPool = [];
-                updateCanvas();
                 return;
             }
 
@@ -262,53 +260,71 @@
             changeDisplayColor();
         }
 
-        // --- Xử lý Picture-in-Picture ---
-        const canvas = document.getElementById('hiddenCanvas');
-        const ctx = canvas.getContext('2d');
-        const video = document.getElementById('pipVideo');
-
-        function updateCanvas() {
-            const name = document.getElementById('nameText').innerText;
-            const round = document.getElementById('roundTag').innerText;
-
-            ctx.fillStyle = currentBgColor;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            ctx.fillStyle = "#333333";
-            ctx.font = "bold 20px Arial";
-            ctx.fillText(round, 20, 35);
-
-            ctx.fillStyle = "#000000";
-            ctx.font = "bold 40px Arial";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText(name, canvas.width / 2, canvas.height / 2);
+        // Đồng bộ dữ liệu trạng thái sang cửa sổ con
+        function broadcastState() {
+            channel.postMessage({
+                name: document.getElementById('nameText').innerText,
+                round: document.getElementById('roundTag').innerText,
+                bgColor: currentBgColor,
+                inputVal: document.getElementById('nameInput').value,
+                mode: currentMode,
+                currentIndex: currentIndex,
+                orderRound: orderRound,
+                shuffledPool: shuffledPool,
+                shuffleRound: shuffleRound
+            });
         }
 
-        async function togglePiP() {
-            try {
-                if (document.pictureInPictureElement) {
-                    await document.exitPictureInPicture();
-                } else {
-                    updateCanvas();
-                    const stream = canvas.captureStream(10);
-                    video.srcObject = stream;
-                    await video.play();
-                    await video.requestPictureInPicture();
-                }
-            } catch (err) {
-                alert("Trình duyệt chưa hỗ trợ tính năng này!");
+        // Nhận dữ liệu đồng bộ nếu là cửa sổ siêu nhỏ hoặc nhận lệnh bấm từ cửa sổ con
+        channel.onmessage = (event) => {
+            const data = event.data;
+            if (data.action === 'NEXT') {
+                showNext();
+            } else {
+                document.getElementById('nameText').innerText = data.name;
+                document.getElementById('roundTag').innerText = data.round;
+                document.getElementById('displayBox').style.backgroundColor = data.bgColor;
+                document.getElementById('nameInput').value = data.inputVal;
+                currentMode = data.mode;
+                currentIndex = data.currentIndex;
+                orderRound = data.orderRound;
+                shuffledPool = data.shuffledPool;
+                shuffleRound = data.shuffleRound;
             }
-        }
+        };
 
-        video.addEventListener('click', triggerNextName);
+        // Reset dữ liệu khi nhập mới
         document.getElementById('nameInput').addEventListener('input', function() {
             currentIndex = 0; orderRound = 1; shuffledPool = []; shuffleRound = 1;
             document.getElementById('roundTag').innerText = "Vòng: 0";
             document.getElementById('nameText').innerText = "--- CLICK ĐỂ BẮT ĐẦU ---";
+            broadcastState();
         });
 
-        updateCanvas();
+        // Hàm mở Cửa Sổ Siêu Nhỏ (Tự động hẹp chiều rộng)
+        function openMiniWindow() {
+            const miniWin = window.open(
+                window.location.href, 
+                'MiniNamePicker', 
+                'width=200,height=150,resizable=yes,scrollbars=no,status=no,toolbar=no,menubar=no'
+            );
+
+            // Gửi dữ liệu hiện tại ngay khi cửa sổ con vừa mở
+            setTimeout(() => {
+                broadcastState();
+            }, 500);
+        }
+
+        // Nếu đây là cửa sổ siêu nhỏ được mở ra, khi click vào sẽ báo cửa sổ mẹ nhảy tên
+        if (window.name === 'MiniNamePicker') {
+            document.getElementById('displayBox').onclick = function() {
+                if (window.opener && !window.opener.closed) {
+                    channel.postMessage({ action: 'NEXT' });
+                } else {
+                    showNext();
+                }
+            };
+        }
     </script>
 </body>
 </html>
