@@ -46,6 +46,32 @@
             gap: 10px;
         }
 
+        /* Thanh chọn lớp */
+        .class-selector {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .class-selector input {
+            flex: 1;
+            padding: 8px;
+            border: 2px solid #cccccc;
+            border-radius: 8px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .class-selector button {
+            flex: none;
+            width: 130px;
+            background-color: #17a2b8;
+        }
+
+        .class-selector button:hover {
+            background-color: #138496;
+        }
+
         .input-row {
             display: flex;
             gap: 10px;
@@ -164,8 +190,13 @@
 <body>
 
     <div class="container">
-        <!-- Phần nhập liệu -->
+        <!-- Phần nhập liệu & Tải lớp từ Sheet -->
         <div class="controls">
+            <div class="class-selector">
+                <input type="text" id="classCodeInput" placeholder="Nhập mã lớp (VD: K22)" value="K22">
+                <button onclick="loadClassData()">📥 Lấy tên lớp</button>
+            </div>
+
             <div class="input-row">
                 <textarea id="nameInputA" placeholder="CỘT A (Mỗi dòng 1 tên)..." oninput="forceUppercase(this)"></textarea>
                 <textarea id="nameInputB" placeholder="CỘT B (Nút chia đôi ô)..." style="display: none;" oninput="forceUppercase(this)"></textarea>
