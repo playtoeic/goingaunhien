@@ -1,236 +1,12 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hiển Thị Tên Tự Động</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-        }
+<script>
+        // Thay ID Google Sheet của bạn vào đây
+        const SHEET_ID = "1-aZa_8s-Wi_4Lca9q0aDTOXmIx846EjpZ9gcaOK7joI";
+        // Lấy dữ liệu dạng CSV từ Sheet đầu tiên (gid=0 hoặc tùy chỉnh)
+        const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`;
 
-        html, body {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #f4f6f8;
-        }
-
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 10px;
-        }
-
-        .container {
-            background: #ffffff;
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            height: 100%;
-            max-width: 600px;
-            max-height: 700px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .controls {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        /* Thanh chọn lớp */
-        .class-selector {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .class-selector input {
-            flex: 1;
-            padding: 8px;
-            border: 2px solid #cccccc;
-            border-radius: 8px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-        .class-selector button {
-            flex: none;
-            width: 130px;
-            background-color: #17a2b8;
-        }
-
-        .class-selector button:hover {
-            background-color: #138496;
-        }
-
-        .input-row {
-            display: flex;
-            gap: 10px;
-        }
-
-        textarea {
-            flex: 1;
-            height: 80px;
-            padding: 8px;
-            border: 2px solid #cccccc;
-            border-radius: 8px;
-            font-size: 13px;
-            text-transform: uppercase;
-            resize: none;
-        }
-
-        textarea:focus {
-            border-color: #007bff;
-            outline: none;
-        }
-
-        .btn-group {
-            display: flex;
-            gap: 8px;
-        }
-
-        button {
-            flex: 1;
-            padding: 10px;
-            font-size: 12px;
-            font-weight: bold;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background 0.2s, transform 0.1s;
-        }
-
-        button:active { transform: scale(0.98); }
-        .btn-order { background-color: #007bff; }
-        .btn-order:hover { background-color: #0056b3; }
-        .btn-shuffle { background-color: #28a745; }
-        .btn-shuffle:hover { background-color: #1e7e34; }
-        .btn-split { background-color: #6f42c1; }
-        .btn-split:hover { background-color: #593196; }
-        .btn-mini { background-color: #fd7e14; width: 100%; margin-top: 2px; }
-        .btn-mini:hover { background-color: #e06b00; }
-
-        /* Khung hiển thị tổng */
-        .display-container {
-            width: 100%;
-            flex: 1;
-            display: flex;
-            gap: 8px;
-        }
-
-        /* Ô hiển thị tên */
-        .display-box {
-            position: relative;
-            flex: 1;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: #e9ecef;
-            border: 2px dashed #6c757d;
-            border-radius: 10px;
-            font-size: clamp(16px, 6vw, 42px);
-            font-weight: bold;
-            color: #111111;
-            text-align: center;
-            word-break: break-word;
-            padding: 25px 8px 8px 8px;
-            cursor: pointer;
-            user-select: none;
-            transition: background-color 0.3s;
-        }
-
-        .display-box:active { transform: scale(0.99); }
-
-        .round-tag {
-            position: absolute;
-            top: 6px;
-            left: 8px;
-            font-size: clamp(9px, 2.5vw, 12px);
-            font-weight: bold;
-            background: rgba(0, 0, 0, 0.15);
-            color: #222;
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
-
-        /* Khi màn hình nhỏ hoặc là Cửa sổ Siêu Nhỏ -> Ẩn phần controls */
-        @media (max-width: 450px), (max-height: 300px) {
-            body { padding: 0; }
-            .controls { display: none !important; }
-            .container {
-                padding: 0;
-                box-shadow: none;
-                background: transparent;
-                max-width: 100%;
-                max-height: 100%;
-                border-radius: 0;
-            }
-            .display-container {
-                gap: 2px;
-            }
-            .display-box {
-                height: 100vh;
-                border-radius: 0;
-                border: none;
-            }
-        }
-    </style>
-</head>
-<body>
-
-    <div class="container">
-        <!-- Phần nhập liệu & Tải lớp từ Sheet -->
-        <div class="controls">
-            <div class="class-selector">
-                <input type="text" id="classCodeInput" placeholder="Nhập mã lớp (VD: K22)" value="K22">
-                <button onclick="loadClassData()">📥 Lấy tên lớp</button>
-            </div>
-
-            <div class="input-row">
-                <textarea id="nameInputA" placeholder="CỘT A (Mỗi dòng 1 tên)..." oninput="forceUppercase(this)"></textarea>
-                <textarea id="nameInputB" placeholder="CỘT B (Nút chia đôi ô)..." style="display: none;" oninput="forceUppercase(this)"></textarea>
-            </div>
-            <div class="btn-group">
-                <button class="btn-order" onclick="setModeAndNext('order')">Hiện Theo Thứ Tự</button>
-                <button class="btn-shuffle" onclick="setModeAndNext('shuffle')">Hiện Xáo Trộn</button>
-                <button class="btn-split" onclick="toggleSplit()">↔️ Chia Đôi / Gộp Ô</button>
-            </div>
-            <button class="btn-mini" onclick="openMiniWindow()">🔲 Mở Cửa Sổ Siêu Nhỏ</button>
-        </div>
-
-        <!-- Khung hiển thị tên (1 hoặc 2 ô) -->
-        <div class="display-container" id="displayContainer">
-            <!-- Ô A -->
-            <div class="display-box" id="displayBoxA" onclick="triggerNextName('A')">
-                <span class="round-tag" id="roundTagA">Vòng A: 0</span>
-                <span id="nameTextA">--- CỘT A ---</span>
-            </div>
-            <!-- Ô B (Ẩn mặc định) -->
-            <div class="display-box" id="displayBoxB" style="display: none;" onclick="triggerNextName('B')">
-                <span class="round-tag" id="roundTagB">Vòng B: 0</span>
-                <span id="nameTextB">--- CỘT B ---</span>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        const SCRIPT_URL = "https://script.google.com/macros/library/d/1w0alxUipZY6xH7T8jtG4XYsHUoxJ9etA1CZX8_gskrLaKwRyCShp3vA0/2";
-
-        let isSplit = false; // Trạng thái chia đôi ô
+        let isSplit = false;
         let currentMode = 'order';
 
-        // Dữ liệu riêng biệt cho Cột A và Cột B
         const state = {
             A: { currentIndex: 0, orderRound: 1, shuffledPool: [], shuffleRound: 1, color: "#e9ecef" },
             B: { currentIndex: 0, orderRound: 1, shuffledPool: [], shuffleRound: 1, color: "#e9ecef" }
@@ -244,7 +20,7 @@
 
         const channel = new BroadcastChannel('name_picker_channel');
 
-        // Hàm lấy danh sách lớp từ Google Sheet qua API Apps Script
+        // Hàm đọc trực tiếp Google Sheet qua CSV (Không bị lỗi CORS)
         async function loadClassData() {
             const classCode = document.getElementById('classCodeInput').value.trim();
             if (!classCode) return alert("Vui lòng nhập tên lớp!");
@@ -254,26 +30,67 @@
             btn.disabled = true;
 
             try {
-                const response = await fetch(`${SCRIPT_URL}?class=${encodeURIComponent(classCode)}`, {
-                    method: 'GET',
-                    redirect: 'follow'
-                });
-                const data = await response.json();
+                const response = await fetch(CSV_URL);
+                const csvText = await response.text();
+                
+                // Phân tách CSV thành các dòng và cột
+                const rows = parseCSV(csvText);
+                const names = [];
+                let currentClass = "";
 
-                if (data.names && data.names.length > 0) {
+                for (let i = 0; i < rows.length; i++) {
+                    const cellClass = (rows[i][0] || "").trim();
+                    const name = (rows[i][1] || "").trim();
+
+                    // Xử lý gộp ô (nếu dòng dưới để trống ô lớp, nó sẽ tự động lấy lớp của dòng trên)
+                    if (cellClass !== "") {
+                        currentClass = cellClass;
+                    }
+
+                    if (currentClass.toUpperCase() === classCode.toUpperCase() && name !== "" && name.toUpperCase() !== "TÊN") {
+                        names.push(name);
+                    }
+                }
+
+                if (names.length > 0) {
                     const textareaA = document.getElementById('nameInputA');
-                    textareaA.value = data.names.join('\n').toUpperCase();
+                    textareaA.value = names.join('\n').toUpperCase();
                     textareaA.dispatchEvent(new Event('input'));
                 } else {
-                    alert(`Không tìm thấy dữ liệu hoặc danh sách rỗng cho lớp ${classCode}`);
+                    alert(`Không tìm thấy học viên nào trong lớp ${classCode}`);
                 }
             } catch (err) {
-                alert("Lỗi kết nối với Google Sheets API! Vui lòng kiểm tra lại quyền triển khai Web App.");
+                alert("Lỗi tải dữ liệu từ Google Sheets! Hãy kiểm tra lại quyền chia sẻ file Sheet.");
                 console.error(err);
             } finally {
                 btn.innerText = "📥 Lấy tên lớp";
                 btn.disabled = false;
             }
+        }
+
+        // Hàm hỗ trợ phân tách chuỗi CSV chuẩn xác (xử lý cả dấu phẩy trong tên nếu có)
+        function parseCSV(text) {
+            let lines = text.split("\n");
+            let result = [];
+            for (let i = 0; i < lines.length; i++) {
+                let row = [];
+                let inQuotes = false;
+                let entry = "";
+                for (let c = 0; c < lines[i].length; c++) {
+                    let char = lines[i][c];
+                    if (char === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (char === ',' && !inQuotes) {
+                        row.push(entry);
+                        entry = "";
+                    } else {
+                        entry += char;
+                    }
+                }
+                row.push(entry);
+                result.push(row);
+            }
+            return result;
         }
 
         function forceUppercase(element) { element.value = element.value.toUpperCase(); }
@@ -288,19 +105,10 @@
             document.getElementById(`displayBox${col}`).style.backgroundColor = state[col].color;
         }
 
-        // Bật / Tắt chế độ chia đôi ô
         function toggleSplit() {
             isSplit = !isSplit;
-            const boxB = document.getElementById('displayBoxB');
-            const inputB = document.getElementById('nameInputB');
-
-            if (isSplit) {
-                boxB.style.display = 'flex';
-                inputB.style.display = 'block';
-            } else {
-                boxB.style.display = 'none';
-                inputB.style.display = 'none';
-            }
+            document.getElementById('displayBoxB').style.display = isSplit ? 'flex' : 'none';
+            document.getElementById('nameInputB').style.display = isSplit ? 'block' : 'none';
             broadcastState();
         }
 
@@ -310,9 +118,7 @@
             if (isSplit) showNext('B');
         }
 
-        function triggerNextName(col) {
-            showNext(col);
-        }
+        function triggerNextName(col) { showNext(col); }
 
         function showNext(col) {
             if (currentMode === 'order') showNextOrdered(col);
@@ -372,7 +178,6 @@
             changeDisplayColor(col);
         }
 
-        // Đồng bộ dữ liệu với cửa sổ siêu nhỏ
         function broadcastState() {
             channel.postMessage({
                 isSplit: isSplit,
@@ -394,27 +199,21 @@
             } else {
                 isSplit = data.isSplit;
                 currentMode = data.currentMode;
-                
                 document.getElementById('displayBoxB').style.display = isSplit ? 'flex' : 'none';
                 document.getElementById('nameInputB').style.display = isSplit ? 'block' : 'none';
-
                 document.getElementById('nameTextA').innerText = data.nameA;
                 document.getElementById('roundTagA').innerText = data.roundA;
                 document.getElementById('nameTextB').innerText = data.nameB;
                 document.getElementById('roundTagB').innerText = data.roundB;
-
                 document.getElementById('nameInputA').value = data.inputA;
                 document.getElementById('nameInputB').value = data.inputB;
-
                 document.getElementById('displayBoxA').style.backgroundColor = data.state.A.color;
                 document.getElementById('displayBoxB').style.backgroundColor = data.state.B.color;
-
                 Object.assign(state.A, data.state.A);
                 Object.assign(state.B, data.state.B);
             }
         };
 
-        // Reset riêng khi sửa nội dung nhập liệu
         ['A', 'B'].forEach(col => {
             document.getElementById(`nameInput${col}`).addEventListener('input', function() {
                 state[col].currentIndex = 0;
@@ -436,7 +235,6 @@
             setTimeout(broadcastState, 500);
         }
 
-        // Xử lý sự kiện click khi chạy ở Cửa sổ Siêu Nhỏ
         if (window.name === 'MiniNamePicker') {
             document.getElementById('displayBoxA').onclick = function() {
                 if (window.opener && !window.opener.closed) channel.postMessage({ action: 'NEXT', column: 'A' });
@@ -448,5 +246,3 @@
             };
         }
     </script>
-</body>
-</html>
